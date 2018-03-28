@@ -44,7 +44,8 @@ class Python_image_loader:
         """ Create a new log of all the files in the folder
         """
         print('[+] Rebuilding copy log... this may take a few mins')
-        self._copyLog = self.get_hashes(self.destinationDir, True)
+        existingFiles = self.get_hashes(self.destinationDir, True)
+        self._copyLog = existingFiles if not existingFiles.empty else DataFrame(columns=["SHA256", "Path", "Azure_Processed"])
         self._copyLog.to_csv(self._copyLogFile, quoting=1)
         print('[+] Copy Log Rebuilt')
 
@@ -58,8 +59,8 @@ class Python_image_loader:
 
     # Hash all files in source
     def get_hashes(self, source, no_jpg_size_filter=True):
-        """ Returns SHA256 hashes of files in the folder. 
-            Setting True to no_jpg_size_filter allows the function 
+        """ Returns SHA256 hashes of files in the folder.
+            Setting True to no_jpg_size_filter allows the function
             to hash all files, otherwise it will limit to jpg files of 1920X1080 resolution
         """
         BUF_SIZE = 65345
@@ -175,7 +176,7 @@ class Python_image_loader:
 
 
 def main():
-    if len(argv) < 2:
+    if len(argv) == 0:
         # This may change between machines.. will need to be tested
         sourceDir = getenv(
             'LOCALAPPDATA') + "\\Packages\\Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy\\LocalState\\Assets\\"
