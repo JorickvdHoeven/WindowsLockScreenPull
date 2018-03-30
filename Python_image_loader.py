@@ -8,7 +8,12 @@ from sys import argv
 from PIL import Image
 from requests import post, HTTPError
 from pandas import DataFrame, concat, read_csv
-import APIKey
+try:
+    from APIKey import AzureAPIKey
+    Azure = True
+except ImportError:
+    AzureAPIKey = ''
+    Azure = False
 
 
 class Python_image_loader:
@@ -17,7 +22,7 @@ class Python_image_loader:
         """ Initialise all of the variables and set the API Key
         """
         # 1. Initilise, grab variables
-        self.subscription_key = APIKey.AzureAPIKey
+        self.subscription_key = AzureAPIKey
         self.vision_base_url = "https://eastus.api.cognitive.microsoft.com/vision/v1.0/"
         self.vision_analyze_url = self.vision_base_url + "analyze"
 
@@ -121,7 +126,7 @@ class Python_image_loader:
         else:
             return False
 
-    def findPics(self):
+    def findPics(self, Azure):
         # get the source Hashes
         print(
             '[+] Examining new files and checking for viable backgrounds (jpg, 1920x1080 only)')
@@ -150,33 +155,34 @@ class Python_image_loader:
 
         print('[+] Checking files for taggable files')
         # check jpeg files for wierd 65 char file names and update
-        for index, row in self._copyLog.loc[self._copyLog['Azure_Processed'] == 0].iterrows():
-            if self.__unprocessedFileName(path.basename(row['Path'])):
-                print(
-                    '[+] Starting Azure image tagging for {} ...'.format(path.basename(row['Path'])))
-                endTime = datetime.now() + timedelta(seconds=3)
-                newFileName = self.azureVisionUpdate(row['Path'])
-                newFileName = newFileName.replace('__', '_')
-                while datetime.now() < endTime:
-                    sleep(0.5)
-                newPath = path.join(path.dirname(row['Path']), newFileName)
-                if path.isfile(newPath):
-                    newPath = newPath[:-4] + ' (1)' + newPath[-4:]
-                try:
-                    rename(row['Path'], newPath)
-                    self._copyLog.at[index, 'Path'] = newPath
-                    self._copyLog.at[index, 'Azure_Processed'] = 1
+        if Azure:
+            for index, row in self._copyLog.loc[self._copyLog['Azure_Processed'] == 0].iterrows():
+                if self.__unprocessedFileName(path.basename(row['Path'])):
                     print(
-                        '[+] Azure image tagging finished, new name: {}'.format(newFileName))
-                except OSError:
-                    print('[ERROR] Image {} not updated'.format(
-                        path.basename(row['Path'])))
+                        '[+] Starting Azure image tagging for {} ...'.format(path.basename(row['Path'])))
+                    endTime = datetime.now() + timedelta(seconds=3)
+                    newFileName = self.azureVisionUpdate(row['Path'])
+                    newFileName = newFileName.replace('__', '_')
+                    while datetime.now() < endTime:
+                        sleep(0.5)
+                    newPath = path.join(path.dirname(row['Path']), newFileName)
+                    if path.isfile(newPath):
+                        newPath = newPath[:-4] + ' (1)' + newPath[-4:]
+                    try:
+                        rename(row['Path'], newPath)
+                        self._copyLog.at[index, 'Path'] = newPath
+                        self._copyLog.at[index, 'Azure_Processed'] = 1
+                        print(
+                            '[+] Azure image tagging finished, new name: {}'.format(newFileName))
+                    except OSError:
+                        print('[ERROR] Image {} not updated'.format(
+                            path.basename(row['Path'])))
         self._copyLog.to_csv(self._copyLogFile, quoting=1)
         print('[+] Copy Log Saved')
 
 
 def main():
-    if len(argv) == 0:
+    if len(argv) < 2:
         # This may change between machines.. will need to be tested
         sourceDir = getenv(
             'LOCALAPPDATA') + "\\Packages\\Microsoft.Windows.ContentDeliveryManager_cw5n1h2txyewy\\LocalState\\Assets\\"
@@ -194,7 +200,7 @@ def main():
             exit()
 
     pil = Python_image_loader(sourceDir, destinationDir)
-    pil.findPics()
+    pil.findPics(Azure)
     print('[=] === Execution Finished ===')
     exit()
 
