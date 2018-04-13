@@ -58,7 +58,7 @@ class Python_image_loader:
         """ Load an existing log of all the files in the folder
         """
         with open(logfile, 'r') as f:
-            self._copyLog = read_csv(f, quoting=1)
+            self._copyLog = read_csv(f, quoting=1, index=0)
         print('[!!] TODO: Perform Copy Log integrity Checks')
         # TODO: check that all of the files still exist, and if not find them
 
