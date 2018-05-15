@@ -92,7 +92,12 @@ class Python_image_loader:
     def azureVisionUpdate(self, image_path):
         """ This is a wrapper for the Azure Compute Vision API call
         """
-        image_data = open(image_path, "rb").read()
+        try:
+            image_data = open(image_path, "rb").read()
+        except:
+            print("[!!] File not found: " + image_path)
+            return path.basename(image_path)
+
         headers = {'Ocp-Apim-Subscription-Key': self.subscription_key,
                    "Content-Type": "application/octet-stream"}
         params = {'visualFeatures': 'Categories,Description,Color'}
@@ -110,14 +115,22 @@ class Python_image_loader:
             exit()
 
         # print(analysis)
-        image_caption = analysis["description"]["captions"][0]["text"].capitalize(
-        )
-        main_category = analysis["categories"]
+        try:
+            image_caption = analysis["description"]["captions"][0]["text"].capitalize(
+            )
+            main_category = analysis["categories"]
+        except:
+            print("[!] error in the image caption") 
+            print(analysis)
+            image_caption = "ERROR_UNKNOWN"
+            main_category = "UNKNOWN"
+
         if len(main_category) > 0:
             prefix = max(analysis["categories"],
                          key=lambda x: x['score'])['name']
         else:
             prefix = 'NoCat'
+        
         return prefix.upper() + '_' + image_caption.replace(' ', '_') + '.jpg'
 
     def __unprocessedFileName(self, filename):
