@@ -116,11 +116,10 @@ class Python_image_loader:
 
         # print(analysis)
         try:
-            image_caption = analysis["description"]["captions"][0]["text"].capitalize(
-            )
+            image_caption = analysis["description"]["captions"][0]["text"].capitalize()
             main_category = analysis["categories"]
         except:
-            print("[!] error in the image caption") 
+            print("[!] error in the image caption")
             print(analysis)
             image_caption = "ERROR_UNKNOWN"
             main_category = "UNKNOWN"
@@ -130,16 +129,30 @@ class Python_image_loader:
                          key=lambda x: x['score'])['name']
         else:
             prefix = 'NoCat'
-        
+
         return prefix.upper() + '_' + image_caption.replace(' ', '_') + '.jpg'
 
     def __unprocessedFileName(self, filename):
+        """ check to see if the filename resembles filenames which have not
+            yet been tagged by the Azure Vision API. These are filenames with
+            68 pseudorandom characters but no underscores
+        """
         if len(filename) == 68 and '_' not in filename:
             return True
         else:
             return False
 
     def findPics(self, Azure):
+        """ Finds new files by hashing all of the eligible image
+            files in the folder and checking them against a list
+            of existing hashes. If some of the eligible files are
+            new, then these are copied to the destination folder.
+
+            [[Candidate to move to new function]]
+            Once new files have been found, the process scans the
+            destination folder and attempts to tag any files which
+            have not yet been labeled by the Azure Vision API.
+        """
         # get the source Hashes
         print(
             '[+] Examining new files and checking for viable backgrounds (jpg, 1920x1080 only)')
