@@ -228,7 +228,7 @@ def main():
     pil = Python_image_loader(sourceDir, destinationDir)
     pil.findPics(Azure)
     print('[=] === Execution Finished ===')
-    exit()
+    exit(0)
 
 
 if __name__ == "__main__":
